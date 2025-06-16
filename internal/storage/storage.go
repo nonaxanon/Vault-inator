@@ -228,3 +228,34 @@ func (db *DB) UpdateMasterPassword(currentPassword, newPassword string) error {
 
 	return nil
 }
+
+// UpdatePassword updates an existing password entry in the database.
+func (db *DB) UpdatePassword(entry PasswordEntry) error {
+	// Encrypt the password before storing
+	encryptedPassword, err := db.encryptor.Encrypt(entry.Password)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt password: %v", err)
+	}
+
+	query := `
+	UPDATE vaultinator.passwords 
+	SET title = $1, username = $2, password = $3, notes = $4
+	WHERE id = $5;`
+
+	result, err := db.Exec(query, entry.Title, entry.Username, encryptedPassword, entry.Notes, entry.ID)
+	if err != nil {
+		return fmt.Errorf("failed to update password: %v", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %v", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("no password entry found with ID: %s", entry.ID)
+	}
+
+	log.Printf("Updated password entry with ID: %s", entry.ID)
+	return nil
+}

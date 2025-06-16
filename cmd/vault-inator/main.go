@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"log"
 	"net/http"
 	"os"
@@ -17,10 +18,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
-
-	// Initialize services
-	passwordService := services.NewPasswordService()
-	authService := services.NewAuthService(passwordService)
 
 	// Get database connection string from environment variable
 	connStr := os.Getenv("DATABASE_URL")
@@ -40,7 +37,20 @@ func main() {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 
-	// Create API server with services
+	// Initialize services
+	passwordService := services.NewPasswordService(db)
+	authService := services.NewAuthService(passwordService)
+
+	// If master password is set, derive encryption key from it
+	if cfg.MasterPassword != "" {
+		// Derive encryption key from master password using SHA-256
+		key := sha256.Sum256([]byte(cfg.MasterPassword))
+		if err := passwordService.SetEncryptionKey(key[:]); err != nil {
+			log.Fatalf("Failed to set encryption key: %v", err)
+		}
+	}
+
+	// Create and start API server
 	server := api.NewServer(db, authService, passwordService)
 
 	// Start server

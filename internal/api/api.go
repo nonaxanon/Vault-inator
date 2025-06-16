@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/nonaxanon/vault-inator/internal/services"
 	"github.com/nonaxanon/vault-inator/internal/storage"
@@ -155,7 +156,15 @@ func (s *Server) handleAddPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.passwordService.CreatePassword(&password); err != nil {
+	// Convert to storage.PasswordEntry
+	entry := storage.PasswordEntry{
+		Title:    password.Title,
+		Username: password.Username,
+		Password: password.Password,
+		Notes:    password.Notes,
+	}
+
+	if err := s.db.AddPassword(entry); err != nil {
 		s.logger.WithError(err).Error("Error adding password")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -169,11 +178,23 @@ func (s *Server) handleAddPassword(w http.ResponseWriter, r *http.Request) {
 // handleGetAllPasswords handles the GET request to retrieve all password entries.
 func (s *Server) handleGetAllPasswords(w http.ResponseWriter, r *http.Request) {
 	s.logger.Info("Received GET request to /api/passwords")
-	passwords, err := s.passwordService.GetAllPasswords()
+	entries, err := s.db.GetAllPasswords()
 	if err != nil {
 		s.logger.WithError(err).Error("Error fetching passwords")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	// Convert to services.Password
+	passwords := make([]services.Password, len(entries))
+	for i, entry := range entries {
+		passwords[i] = services.Password{
+			ID:       entry.ID.String(),
+			Title:    entry.Title,
+			Username: entry.Username,
+			Password: entry.Password,
+			Notes:    entry.Notes,
+		}
 	}
 
 	s.logger.WithField("count", len(passwords)).Info("Successfully fetched password entries")
@@ -187,25 +208,34 @@ func (s *Server) handleGetPassword(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 
 	s.logger.WithField("id", id).Info("Received GET request to /api/passwords/{id}")
-	passwords, err := s.passwordService.GetAllPasswords()
+
+	// Parse UUID
+	uuid, err := uuid.Parse(id)
 	if err != nil {
-		s.logger.WithError(err).Error("Error fetching passwords")
+		s.logger.WithError(err).Error("Invalid UUID format")
+		http.Error(w, "Invalid ID format", http.StatusBadRequest)
+		return
+	}
+
+	entry, err := s.db.GetPassword(uuid)
+	if err != nil {
+		s.logger.WithError(err).Error("Error fetching password")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Find the password with the matching ID
-	for _, p := range passwords {
-		if p.ID == id {
-			s.logger.WithField("id", id).Info("Successfully fetched password entry")
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(p)
-			return
-		}
+	// Convert to services.Password
+	password := services.Password{
+		ID:       entry.ID.String(),
+		Title:    entry.Title,
+		Username: entry.Username,
+		Password: entry.Password,
+		Notes:    entry.Notes,
 	}
 
-	s.logger.WithField("id", id).Error("Password not found")
-	http.Error(w, "Password not found", http.StatusNotFound)
+	s.logger.WithField("id", id).Info("Successfully fetched password entry")
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(password)
 }
 
 // handleDeletePassword handles the DELETE request to remove a password entry by ID.
@@ -214,7 +244,16 @@ func (s *Server) handleDeletePassword(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 
 	s.logger.WithField("id", id).Info("Received DELETE request to /api/passwords/{id}")
-	if err := s.passwordService.DeletePassword(id); err != nil {
+
+	// Parse UUID
+	uuid, err := uuid.Parse(id)
+	if err != nil {
+		s.logger.WithError(err).Error("Invalid UUID format")
+		http.Error(w, "Invalid ID format", http.StatusBadRequest)
+		return
+	}
+
+	if err := s.db.DeletePassword(uuid); err != nil {
 		s.logger.WithError(err).WithField("id", id).Error("Error deleting password")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

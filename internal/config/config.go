@@ -36,14 +36,40 @@ func GetConfig() *Config {
 
 // LoadConfig loads the configuration from environment variables and config file
 func LoadConfig() (*Config, error) {
-	// Try to load .env file, but don't fail if it doesn't exist
-	_ = godotenv.Load()
+	// Try to load .env file
+	if err := godotenv.Load(); err != nil {
+		fmt.Printf("Warning: .env file not found: %v\n", err)
+	}
+
+	// Get configuration from environment variables
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		fmt.Println("Warning: DATABASE_URL not set, using default")
+		dbURL = "postgres://admin:admin@192.168.1.8:5432/dev?sslmode=disable"
+	}
+
+	configPath := os.Getenv("CONFIG_PATH")
+	if configPath == "" {
+		fmt.Println("Warning: CONFIG_PATH not set, using default")
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get user home directory: %w", err)
+		}
+		configPath = filepath.Join(homeDir, ".vaultinator", "config.json")
+	}
+
+	// Set environment variables for other parts of the application
+	os.Setenv("DATABASE_URL", dbURL)
+	os.Setenv("CONFIG_PATH", configPath)
 
 	config := GetConfig()
 
 	// Only set master password if it's provided
 	if masterPassword := os.Getenv("MASTER_PASSWORD"); masterPassword != "" {
+		fmt.Println("Info: MASTER_PASSWORD found in environment")
 		config.MasterPassword = masterPassword
+	} else {
+		fmt.Println("Info: MASTER_PASSWORD not set, will be initialized through UI")
 	}
 
 	return config, nil
