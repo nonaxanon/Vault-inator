@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/sha256"
 	"log"
 	"net/http"
 	"os"
@@ -20,14 +19,8 @@ func main() {
 	}
 
 	// Initialize services
-	authService := services.NewAuthService()
 	passwordService := services.NewPasswordService()
-
-	// Generate encryption key from master password
-	key := sha256.Sum256([]byte(cfg.MasterPassword))
-	if err := passwordService.SetEncryptionKey(key[:]); err != nil {
-		log.Fatalf("Failed to initialize encryption: %v", err)
-	}
+	authService := services.NewAuthService(passwordService)
 
 	// Get database connection string from environment variable
 	connStr := os.Getenv("DATABASE_URL")

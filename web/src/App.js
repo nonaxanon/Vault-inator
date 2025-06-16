@@ -20,10 +20,70 @@ function App() {
     newPassword: '',
     confirmPassword: ''
   });
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [showInitForm, setShowInitForm] = useState(false);
+  const [initPassword, setInitPassword] = useState({
+    password: '',
+    confirmPassword: ''
+  });
 
   useEffect(() => {
-    fetchPasswords();
+    checkAuthStatus();
   }, []);
+
+  const checkAuthStatus = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/status`);
+      if (!response.ok) {
+        throw new Error('Failed to check auth status');
+      }
+      const data = await response.json();
+      setIsInitialized(data.initialized);
+      if (data.initialized) {
+        fetchPasswords();
+      } else {
+        setShowInitForm(true);
+      }
+    } catch (err) {
+      console.error('Error checking auth status:', err);
+      setError(err.message);
+    }
+  };
+
+  const handleInitSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (initPassword.password !== initPassword.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/initialize`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          password: initPassword.password
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData);
+      }
+
+      setShowInitForm(false);
+      setIsInitialized(true);
+      setInitPassword({ password: '', confirmPassword: '' });
+      setError('Master password initialized successfully');
+      fetchPasswords();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
 
   const fetchPasswords = async () => {
     try {
@@ -135,7 +195,7 @@ function App() {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/master-password`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/change`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -162,6 +222,56 @@ function App() {
       setError(err.message);
     }
   };
+
+  if (!isInitialized) {
+    return (
+      <div className="App">
+        <h1>Vault-inator</h1>
+        {error && <p style={{ color: error.includes('successfully') ? 'green' : 'red' }}>{error}</p>}
+        
+        {showInitForm && (
+          <form onSubmit={handleInitSubmit} style={{ marginBottom: '20px', padding: '20px', border: '1px solid #ccc', borderRadius: '4px' }}>
+            <h3>Initialize Master Password</h3>
+            <div style={{ marginBottom: '10px' }}>
+              <input
+                type="password"
+                name="password"
+                placeholder="Master Password"
+                value={initPassword.password}
+                onChange={(e) => setInitPassword(prev => ({ ...prev, password: e.target.value }))}
+                required
+                style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+              />
+            </div>
+            <div style={{ marginBottom: '10px' }}>
+              <input
+                type="password"
+                name="confirmPassword"
+                placeholder="Confirm Master Password"
+                value={initPassword.confirmPassword}
+                onChange={(e) => setInitPassword(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                required
+                style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+              />
+            </div>
+            <button
+              type="submit"
+              style={{
+                padding: '8px 16px',
+                backgroundColor: '#4CAF50',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Initialize Master Password
+            </button>
+          </form>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="App">

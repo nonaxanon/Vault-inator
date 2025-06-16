@@ -76,6 +76,15 @@ func (s *PasswordService) loadPasswords() ([]Password, error) {
 		return []Password{}, nil
 	}
 
+	// If no encryption key is set, try to read as plain JSON
+	if s.block == nil {
+		var passwords []Password
+		if err := json.Unmarshal(data, &passwords); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal data: %w", err)
+		}
+		return passwords, nil
+	}
+
 	// Decrypt data
 	decrypted, err := s.decrypt(data)
 	if err != nil {
@@ -99,6 +108,14 @@ func (s *PasswordService) savePasswords(passwords []Password) error {
 	data, err := json.Marshal(passwords)
 	if err != nil {
 		return fmt.Errorf("failed to marshal data: %w", err)
+	}
+
+	// If no encryption key is set, write as plain JSON
+	if s.block == nil {
+		if err := os.WriteFile(s.filePath, data, 0600); err != nil {
+			return fmt.Errorf("failed to write file: %w", err)
+		}
+		return nil
 	}
 
 	// Encrypt data

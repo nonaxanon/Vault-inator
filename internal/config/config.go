@@ -39,14 +39,13 @@ func LoadConfig() (*Config, error) {
 	// Try to load .env file, but don't fail if it doesn't exist
 	_ = godotenv.Load()
 
-	// Get master password from environment variable
-	masterPassword := os.Getenv("MASTER_PASSWORD")
-	if masterPassword == "" {
-		return nil, fmt.Errorf("MASTER_PASSWORD environment variable is required")
+	config := GetConfig()
+
+	// Only set master password if it's provided
+	if masterPassword := os.Getenv("MASTER_PASSWORD"); masterPassword != "" {
+		config.MasterPassword = masterPassword
 	}
 
-	config := GetConfig()
-	config.MasterPassword = masterPassword
 	return config, nil
 }
 
@@ -78,11 +77,8 @@ func (c *Config) load() error {
 	return nil
 }
 
-// Save writes the configuration to the config file
-func (c *Config) Save() error {
-	configLock.Lock()
-	defer configLock.Unlock()
-
+// save writes the configuration to the config file without locking
+func (c *Config) save() error {
 	configPath := os.Getenv("CONFIG_PATH")
 	if configPath == "" {
 		homeDir, err := os.UserHomeDir()
@@ -112,6 +108,13 @@ func (c *Config) Save() error {
 	return nil
 }
 
+// Save writes the configuration to the config file with locking
+func (c *Config) Save() error {
+	configLock.Lock()
+	defer configLock.Unlock()
+	return c.save()
+}
+
 // UpdateMasterPassword updates the master password hash and salt
 func (c *Config) UpdateMasterPassword(hash, salt string) error {
 	configLock.Lock()
@@ -119,7 +122,7 @@ func (c *Config) UpdateMasterPassword(hash, salt string) error {
 
 	c.MasterPasswordHash = hash
 	c.Salt = salt
-	return c.Save()
+	return c.save() // Use save() instead of Save() to avoid double locking
 }
 
 // GetMasterPasswordHash returns the stored master password hash

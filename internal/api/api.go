@@ -116,8 +116,8 @@ func (s *Server) handleVerifyMasterPassword(w http.ResponseWriter, r *http.Reque
 func (s *Server) handleChangeMasterPassword(w http.ResponseWriter, r *http.Request) {
 	s.logger.Info("Received POST request to /api/auth/change")
 	var req struct {
-		CurrentPassword string `json:"current_password" binding:"required"`
-		NewPassword     string `json:"new_password" binding:"required"`
+		CurrentPassword string `json:"currentPassword" binding:"required"`
+		NewPassword     string `json:"newPassword" binding:"required"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		s.logger.WithError(err).Error("Error decoding request body")

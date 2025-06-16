@@ -2,6 +2,7 @@ package services
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -17,12 +18,14 @@ var (
 )
 
 type AuthService struct {
-	config *config.Config
+	config          *config.Config
+	passwordService *PasswordService
 }
 
-func NewAuthService() *AuthService {
+func NewAuthService(passwordService *PasswordService) *AuthService {
 	return &AuthService{
-		config: config.GetConfig(),
+		config:          config.GetConfig(),
+		passwordService: passwordService,
 	}
 }
 
@@ -43,6 +46,12 @@ func (s *AuthService) InitializeMasterPassword(password string) error {
 	// Store the hash and salt
 	if err := s.config.UpdateMasterPassword(string(hashedPassword), base64.StdEncoding.EncodeToString(salt)); err != nil {
 		return fmt.Errorf("failed to save master password: %w", err)
+	}
+
+	// Set encryption key for password service
+	key := sha256.Sum256([]byte(password))
+	if err := s.passwordService.SetEncryptionKey(key[:]); err != nil {
+		return fmt.Errorf("failed to set encryption key: %w", err)
 	}
 
 	return nil
@@ -70,6 +79,12 @@ func (s *AuthService) ChangeMasterPassword(currentPassword, newPassword string) 
 	// Update the stored hash and salt
 	if err := s.config.UpdateMasterPassword(string(hashedPassword), base64.StdEncoding.EncodeToString(salt)); err != nil {
 		return fmt.Errorf("failed to update master password: %w", err)
+	}
+
+	// Update encryption key for password service
+	key := sha256.Sum256([]byte(newPassword))
+	if err := s.passwordService.SetEncryptionKey(key[:]); err != nil {
+		return fmt.Errorf("failed to update encryption key: %w", err)
 	}
 
 	return nil
