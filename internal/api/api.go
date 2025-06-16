@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -152,7 +153,7 @@ func (s *Server) handleAddPassword(w http.ResponseWriter, r *http.Request) {
 	var password services.Password
 	if err := json.NewDecoder(r.Body).Decode(&password); err != nil {
 		s.logger.WithError(err).Error("Error decoding request body")
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
@@ -161,12 +162,13 @@ func (s *Server) handleAddPassword(w http.ResponseWriter, r *http.Request) {
 		Title:    password.Title,
 		Username: password.Username,
 		Password: password.Password,
+		URL:      password.URL,
 		Notes:    password.Notes,
 	}
 
 	if err := s.db.AddPassword(entry); err != nil {
 		s.logger.WithError(err).Error("Error adding password")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Failed to add password: %v", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -181,7 +183,7 @@ func (s *Server) handleGetAllPasswords(w http.ResponseWriter, r *http.Request) {
 	entries, err := s.db.GetAllPasswords()
 	if err != nil {
 		s.logger.WithError(err).Error("Error fetching passwords")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Failed to get passwords: %v", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -189,10 +191,11 @@ func (s *Server) handleGetAllPasswords(w http.ResponseWriter, r *http.Request) {
 	passwords := make([]services.Password, len(entries))
 	for i, entry := range entries {
 		passwords[i] = services.Password{
-			ID:       entry.ID.String(),
+			ID:       entry.ID,
 			Title:    entry.Title,
 			Username: entry.Username,
 			Password: entry.Password,
+			URL:      entry.URL,
 			Notes:    entry.Notes,
 		}
 	}
@@ -220,16 +223,17 @@ func (s *Server) handleGetPassword(w http.ResponseWriter, r *http.Request) {
 	entry, err := s.db.GetPassword(uuid)
 	if err != nil {
 		s.logger.WithError(err).Error("Error fetching password")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Failed to get password: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	// Convert to services.Password
 	password := services.Password{
-		ID:       entry.ID.String(),
+		ID:       entry.ID,
 		Title:    entry.Title,
 		Username: entry.Username,
 		Password: entry.Password,
+		URL:      entry.URL,
 		Notes:    entry.Notes,
 	}
 

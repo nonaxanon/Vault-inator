@@ -9,14 +9,14 @@ import (
 	"github.com/nonaxanon/vault-inator/internal/storage"
 )
 
-// Password represents a stored password entry
+// Password represents a password entry in the service layer.
 type Password struct {
-	ID       string `json:"id"`
-	Title    string `json:"title"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-	URL      string `json:"url"`
-	Notes    string `json:"notes"`
+	ID       uuid.UUID `json:"id"`
+	Title    string    `json:"title"`
+	Username string    `json:"username"`
+	Password string    `json:"password"`
+	URL      string    `json:"url"`
+	Notes    string    `json:"notes"`
 }
 
 // PasswordService handles password storage and retrieval
@@ -56,7 +56,7 @@ func (s *PasswordService) GetAllPasswords() ([]Password, error) {
 	passwords := make([]Password, len(entries))
 	for i, entry := range entries {
 		passwords[i] = Password{
-			ID:       entry.ID.String(),
+			ID:       entry.ID,
 			Title:    entry.Title,
 			Username: entry.Username,
 			Password: entry.Password,
@@ -91,20 +91,13 @@ func (s *PasswordService) UpdatePassword(password *Password) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	id, err := uuid.Parse(password.ID)
-	if err != nil {
-		return fmt.Errorf("invalid password ID: %w", err)
-	}
-
-	entry := storage.PasswordEntry{
-		ID:       id,
+	if err := s.db.UpdatePassword(storage.PasswordEntry{
+		ID:       password.ID,
 		Title:    password.Title,
 		Username: password.Username,
 		Password: password.Password,
 		Notes:    password.Notes,
-	}
-
-	if err := s.db.UpdatePassword(entry); err != nil {
+	}); err != nil {
 		return fmt.Errorf("failed to update password: %w", err)
 	}
 
@@ -112,16 +105,11 @@ func (s *PasswordService) UpdatePassword(password *Password) error {
 }
 
 // DeletePassword removes a password entry
-func (s *PasswordService) DeletePassword(id string) error {
+func (s *PasswordService) DeletePassword(id uuid.UUID) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	uuid, err := uuid.Parse(id)
-	if err != nil {
-		return fmt.Errorf("invalid password ID: %w", err)
-	}
-
-	if err := s.db.DeletePassword(uuid); err != nil {
+	if err := s.db.DeletePassword(id); err != nil {
 		return fmt.Errorf("failed to delete password: %w", err)
 	}
 

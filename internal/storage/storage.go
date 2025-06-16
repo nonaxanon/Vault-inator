@@ -17,6 +17,7 @@ type PasswordEntry struct {
 	Title    string
 	Username string
 	Password string
+	URL      string
 	Notes    string
 }
 
@@ -74,6 +75,7 @@ func (db *DB) InitDB() error {
 		title TEXT NOT NULL,
 		username TEXT NOT NULL,
 		password TEXT NOT NULL,
+		url TEXT,
 		notes TEXT
 	);`
 	_, err = db.Exec(createTableQuery)
@@ -89,11 +91,11 @@ func (db *DB) AddPassword(entry PasswordEntry) error {
 	}
 
 	query := `
-	INSERT INTO vaultinator.passwords (id, title, username, password, notes)
-	VALUES ($1, $2, $3, $4, $5)
+	INSERT INTO vaultinator.passwords (id, title, username, password, url, notes)
+	VALUES ($1, $2, $3, $4, $5, $6)
 	RETURNING id;`
 	var id uuid.UUID
-	err = db.QueryRow(query, uuid.New(), entry.Title, entry.Username, encryptedPassword, entry.Notes).Scan(&id)
+	err = db.QueryRow(query, uuid.New(), entry.Title, entry.Username, encryptedPassword, entry.URL, entry.Notes).Scan(&id)
 	if err != nil {
 		return err
 	}
@@ -105,8 +107,8 @@ func (db *DB) AddPassword(entry PasswordEntry) error {
 func (db *DB) GetPassword(id uuid.UUID) (PasswordEntry, error) {
 	var entry PasswordEntry
 	var encryptedPassword string
-	query := `SELECT id, title, username, password, notes FROM vaultinator.passwords WHERE id = $1;`
-	err := db.QueryRow(query, id).Scan(&entry.ID, &entry.Title, &entry.Username, &encryptedPassword, &entry.Notes)
+	query := `SELECT id, title, username, password, url, notes FROM vaultinator.passwords WHERE id = $1;`
+	err := db.QueryRow(query, id).Scan(&entry.ID, &entry.Title, &entry.Username, &encryptedPassword, &entry.URL, &entry.Notes)
 	if err != nil {
 		return PasswordEntry{}, err
 	}
@@ -123,7 +125,7 @@ func (db *DB) GetPassword(id uuid.UUID) (PasswordEntry, error) {
 
 // GetAllPasswords retrieves all password entries from the database.
 func (db *DB) GetAllPasswords() ([]PasswordEntry, error) {
-	query := `SELECT id, title, username, password, notes FROM vaultinator.passwords;`
+	query := `SELECT id, title, username, password, url, notes FROM vaultinator.passwords;`
 	rows, err := db.Query(query)
 	if err != nil {
 		return nil, err
@@ -134,7 +136,7 @@ func (db *DB) GetAllPasswords() ([]PasswordEntry, error) {
 	for rows.Next() {
 		var entry PasswordEntry
 		var encryptedPassword string
-		if err := rows.Scan(&entry.ID, &entry.Title, &entry.Username, &encryptedPassword, &entry.Notes); err != nil {
+		if err := rows.Scan(&entry.ID, &entry.Title, &entry.Username, &encryptedPassword, &entry.URL, &entry.Notes); err != nil {
 			return nil, err
 		}
 
@@ -239,10 +241,10 @@ func (db *DB) UpdatePassword(entry PasswordEntry) error {
 
 	query := `
 	UPDATE vaultinator.passwords 
-	SET title = $1, username = $2, password = $3, notes = $4
-	WHERE id = $5;`
+	SET title = $1, username = $2, password = $3, url = $4, notes = $5
+	WHERE id = $6;`
 
-	result, err := db.Exec(query, entry.Title, entry.Username, encryptedPassword, entry.Notes, entry.ID)
+	result, err := db.Exec(query, entry.Title, entry.Username, encryptedPassword, entry.URL, entry.Notes, entry.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update password: %v", err)
 	}

@@ -313,43 +313,49 @@ function App() {
             <h2>Add New Password</h2>
             <form onSubmit={handleAddPassword}>
               <div className="form-group">
-                <label>Title:</label>
+                <label htmlFor="title">Title:</label>
                 <input
                   type="text"
+                  id="title"
                   value={newPassword.title}
                   onChange={(e) => setNewPassword({ ...newPassword, title: e.target.value })}
                   required
                 />
               </div>
               <div className="form-group">
-                <label>Username:</label>
+                <label htmlFor="username">Username:</label>
                 <input
                   type="text"
+                  id="username"
                   value={newPassword.username}
                   onChange={(e) => setNewPassword({ ...newPassword, username: e.target.value })}
                   required
                 />
               </div>
               <div className="form-group">
-                <label>Password:</label>
+                <label htmlFor="password">Password:</label>
                 <input
                   type="password"
+                  id="password"
                   value={newPassword.password}
                   onChange={(e) => setNewPassword({ ...newPassword, password: e.target.value })}
                   required
                 />
               </div>
               <div className="form-group">
-                <label>URL:</label>
+                <label htmlFor="url">URL:</label>
                 <input
                   type="url"
+                  id="url"
                   value={newPassword.url}
                   onChange={(e) => setNewPassword({ ...newPassword, url: e.target.value })}
+                  placeholder="https://example.com"
                 />
               </div>
               <div className="form-group">
-                <label>Notes:</label>
+                <label htmlFor="notes">Notes:</label>
                 <textarea
+                  id="notes"
                   value={newPassword.notes}
                   onChange={(e) => setNewPassword({ ...newPassword, notes: e.target.value })}
                 />
