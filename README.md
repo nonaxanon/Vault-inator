@@ -1,72 +1,144 @@
-# Vault-inator
+# Vault-inator 🔐
 
-A local, LastPass-style password manager built with Go, PostgreSQL, and React.
+A secure, modern password manager built with Go and React. Vault-inator provides a user-friendly interface for managing your passwords while ensuring they remain encrypted and secure.
 
-## Features
+## Features ✨
 
-- Secure password storage using AES-256-GCM encryption
-- Local network access only (no internet exposure)
-- Simple web UI for managing passwords
-- RESTful API for programmatic access
+- 🔒 Military-grade AES-256-GCM encryption
+- 🎨 Modern, responsive dark theme UI
+- 🔍 Search and sort functionality
+- 📋 One-click copy for usernames, passwords, and URLs
+- 👁️ Password visibility toggle
+- 🔄 Master password management
+- 📱 Mobile-friendly design
 
-## Prerequisites
+## Security 🔐
 
-- Go 1.21 or later
-- PostgreSQL
-- Node.js and npm (for React frontend)
+Vault-inator implements several security measures to protect your passwords:
 
-## Setup
+- AES-256-GCM encryption for all stored passwords
+- SHA-256 key derivation from master password
+- Bcrypt hashing for master password storage
+- Unique encryption nonce for each password
+- Secure database storage with PostgreSQL
+- SSL support for database connections
 
-### 1. Clone the Repository
+## Prerequisites 📋
 
-```bash
-git clone https://github.com/nonaxanon/vault-inator.git
-cd vault-inator
+- Go 1.16 or higher
+- Node.js 14 or higher
+- PostgreSQL 12 or higher
+- npm or yarn
+
+## Installation 🚀
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/vault-inator.git
+   cd vault-inator
+   ```
+
+2. Set up the database:
+   ```bash
+   # Create a PostgreSQL database
+   createdb vaultinator
+   ```
+
+3. Configure environment variables:
+   ```bash
+   # Create a .env file in the root directory
+   DATABASE_URL=postgres://username:password@localhost:5432/vaultinator?sslmode=disable
+   CONFIG_PATH=/path/to/config.json
+   ```
+
+4. Build and run the backend:
+   ```bash
+   cd backend
+   go mod download
+   go run cmd/vault-inator/main.go
+   ```
+
+5. Build and run the frontend:
+   ```bash
+   cd web
+   npm install
+   npm start
+   ```
+
+## Usage 📖
+
+1. Open your browser and navigate to `http://localhost:3000`
+2. Set up your master password when first launching the application
+3. Start adding your passwords with the "Add New Password" button
+4. Use the search and sort features to organize your passwords
+5. Click the copy button to copy usernames, passwords, or URLs
+6. Use the eye icon to toggle password visibility
+
+## Development 🛠️
+
+### Project Structure
+
+```
+vault-inator/
+├── backend/
+│   ├── cmd/
+│   │   └── vault-inator/
+│   │       └── main.go
+│   │
+│   ├── internal/
+│   │   ├── api/
+│   │   ├── config/
+│   │   ├── encryption/
+│   │   ├── services/
+│   │   └── storage/
+│   └── go.mod
+├── web/
+│   ├── src/
+│   │   ├── App.js
+│   │   └── App.css
+│   └── package.json
+└── README.md
 ```
 
-### 2. Set Up PostgreSQL
-
-- Create a PostgreSQL database named `vault_inator`.
-- Update the connection string in `cmd/vault-inator/main.go` if needed.
-
-### 3. Build and Run the Go Backend
+### Running Tests
 
 ```bash
-go mod download
-go build -o vault-inator ./cmd/vault-inator
-./vault-inator
-```
+# Backend tests
+cd backend
+go test ./...
 
-The server will start on `http://localhost:8080`.
-
-### 4. Set Up the React Frontend
-
-```bash
+# Frontend tests
 cd web
-npm install
-npm run build
+npm test
 ```
 
-The frontend will be served by the Go backend at `http://localhost:8080`.
+## Contributing 🤝
 
-## Usage
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-- Open your browser and navigate to `http://localhost:8080`.
-- Use the web UI to add, view, and delete password entries.
+## Security Considerations 🔒
 
-## API Endpoints
+- Always use a strong master password
+- Keep your master password secure and don't share it
+- Regularly update your master password
+- Ensure your database is properly secured
+- Keep the application and its dependencies updated
 
-- `POST /api/passwords` - Add a new password entry
-- `GET /api/passwords` - Retrieve all password entries
-- `GET /api/passwords/{id}` - Retrieve a specific password entry
-- `DELETE /api/passwords/{id}` - Delete a password entry
+## License 📄
 
-## Security Considerations
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-- The service is designed to run on your local network only.
-- Use HTTPS in production (even locally) for added security.
-- Regularly backup your database.
+## Acknowledgments 🙏
 
-## License
+- [Go](https://golang.org/)
+- [React](https://reactjs.org/)
+- [PostgreSQL](https://www.postgresql.org/)
+- [AES-GCM](https://en.wikipedia.org/wiki/Galois/Counter_Mode)
 
-MIT
+## Support 💬
+
+If you encounter any issues or have questions, please open an issue in the GitHub repository.
