@@ -2,12 +2,11 @@
 :root {
   --primary-color: #2563eb;
   --primary-hover: #1d4ed8;
-  --secondary-color: #64748b;
-  --secondary-hover: #475569;
-  --background-color: #f8fafc;
-  --card-background: #ffffff;
-  --text-color: #1e293b;
-  --border-color: #e2e8f0;
+  --background-color: #1a1b1e;
+  --card-background: #2d2e32;
+  --text-color: #e0e0e0;
+  --text-color-light: #a0a0a0;
+  --border-color: #404040;
   --error-color: #ef4444;
   --success-color: #22c55e;
 }
@@ -72,31 +71,39 @@ body {
 }
 
 .btn-secondary {
-  background-color: var(--secondary-color);
-  color: white;
-  border: none;
+  background-color: var(--card-background);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
   padding: 0.5rem 1rem;
   border-radius: 0.375rem;
   cursor: pointer;
   font-weight: 500;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
 }
 
 .btn-secondary:hover {
-  background-color: var(--secondary-hover);
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
 }
 
 .btn-icon {
-  background: none;
+  background-color: var(--primary-color);
+  color: white;
   border: none;
+  border-radius: 0.375rem;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  padding: 0.25rem;
   font-size: 1.25rem;
-  transition: transform 0.2s;
+  transition: background-color 0.2s;
 }
 
 .btn-icon:hover {
-  transform: scale(1.1);
+  background-color: var(--primary-hover);
 }
 
 /* Search and sort styles */
@@ -113,7 +120,14 @@ body {
   padding: 0.5rem;
   border: 1px solid var(--border-color);
   border-radius: 0.375rem;
+  background-color: var(--card-background);
+  color: var(--text-color);
   font-size: 1rem;
+}
+
+.search-box input:focus {
+  outline: none;
+  border-color: var(--primary-color);
 }
 
 .sort-controls {
@@ -126,7 +140,14 @@ body {
   padding: 0.5rem;
   border: 1px solid var(--border-color);
   border-radius: 0.375rem;
+  background-color: var(--card-background);
+  color: var(--text-color);
   font-size: 1rem;
+}
+
+.sort-controls select:focus {
+  outline: none;
+  border-color: var(--primary-color);
 }
 
 /* Password grid styles */
@@ -139,14 +160,14 @@ body {
 .password-card {
   background-color: var(--card-background);
   border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   overflow: hidden;
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .password-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
 .card-header {
@@ -170,6 +191,7 @@ body {
 
 .card-content {
   padding: 1rem;
+  background-color: var(--card-background);
 }
 
 .info-row {
@@ -184,7 +206,7 @@ body {
 
 .label {
   font-size: 0.875rem;
-  color: var(--secondary-color);
+  color: var(--text-color-light);
   margin-bottom: 0.25rem;
 }
 
@@ -192,16 +214,21 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  background-color: var(--background-color);
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border-color);
 }
 
 .value-with-copy span {
   font-family: monospace;
   font-size: 1rem;
+  color: var(--text-color);
 }
 
 .notes {
   font-size: 0.875rem;
-  color: var(--secondary-color);
+  color: var(--text-color-light);
   white-space: pre-wrap;
 }
 
@@ -212,7 +239,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.7);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -225,13 +252,13 @@ body {
   border-radius: 0.5rem;
   width: 100%;
   max-width: 500px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
 .modal-content h2 {
   margin-top: 0;
   margin-bottom: 1.5rem;
-  color: var(--text-color);
+  color: var(--primary-color);
 }
 
 /* Form styles */
@@ -242,6 +269,7 @@ body {
 .form-group label {
   display: block;
   margin-bottom: 0.5rem;
+  color: var(--text-color-light);
   font-weight: 500;
 }
 
@@ -251,12 +279,15 @@ body {
   padding: 0.5rem;
   border: 1px solid var(--border-color);
   border-radius: 0.375rem;
+  background-color: var(--background-color);
+  color: var(--text-color);
   font-size: 1rem;
 }
 
-.form-group textarea {
-  min-height: 100px;
-  resize: vertical;
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
 }
 
 .form-actions {
@@ -280,7 +311,7 @@ body {
   background-color: var(--card-background);
   padding: 2rem;
   border-radius: 0.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   width: 100%;
   max-width: 400px;
 }
@@ -288,7 +319,8 @@ body {
 .init-card h2 {
   margin-top: 0;
   margin-bottom: 1.5rem;
-  color: var(--text-color);
+  color: var(--primary-color);
+  text-align: center;
 }
 
 /* Link styles */
@@ -348,7 +380,7 @@ a:hover {
   color: var(--text-color-light);
   cursor: pointer;
   padding: 0.25rem;
-  transition: color 0.2s ease;
+  transition: color 0.2s;
 }
 
 .copy-btn:hover, .toggle-btn:hover {
