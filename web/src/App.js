@@ -6,25 +6,26 @@ const API_BASE_URL = 'http://localhost:8080';
 
 function App() {
   const [passwords, setPasswords] = useState([]);
-  const [newPassword, setNewPassword] = useState({ 
-    title: '', 
-    username: '', 
-    password: '', 
-    notes: '' 
-  });
   const [error, setError] = useState('');
-  const [visiblePasswords, setVisiblePasswords] = useState({});
-  const [showMasterPasswordForm, setShowMasterPasswordForm] = useState(false);
-  const [masterPasswordForm, setMasterPasswordForm] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [initPassword, setInitPassword] = useState({
+  const [showInitForm, setShowInitForm] = useState(false);
+  const [masterPassword, setMasterPassword] = useState('');
+  const [newPassword, setNewPassword] = useState({
+    title: '',
+    username: '',
     password: '',
-    confirmPassword: ''
+    url: '',
+    notes: ''
   });
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [showChangePasswordForm, setShowChangePasswordForm] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newMasterPassword, setNewMasterPassword] = useState('');
+  const [confirmNewMasterPassword, setConfirmNewMasterPassword] = useState('');
+  const [visiblePasswords, setVisiblePasswords] = useState({});
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('title');
+  const [sortOrder, setSortOrder] = useState('asc');
 
   useEffect(() => {
     checkAuthStatus();
@@ -33,359 +34,379 @@ function App() {
   const checkAuthStatus = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/status`);
-      if (!response.ok) {
-        throw new Error('Failed to check auth status');
-      }
       const data = await response.json();
       setIsInitialized(data.initialized);
       if (data.initialized) {
         fetchPasswords();
+      } else {
+        setShowInitForm(true);
       }
-    } catch (err) {
-      console.error('Error checking auth status:', err);
-      setError(err.message);
+    } catch (error) {
+      setError('Failed to check authentication status');
     }
-  };
-
-  const handleInitSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-
-    if (initPassword.password !== initPassword.confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/initialize`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          password: initPassword.password
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData);
-      }
-
-      setIsInitialized(true);
-      setInitPassword({ password: '', confirmPassword: '' });
-      setError('Master password initialized successfully');
-      fetchPasswords();
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  const handleMasterPasswordSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-
-    if (masterPasswordForm.newPassword !== masterPasswordForm.confirmPassword) {
-      setError('New passwords do not match');
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/change`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          currentPassword: masterPasswordForm.currentPassword,
-          newPassword: masterPasswordForm.newPassword,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData);
-      }
-
-      setShowMasterPasswordForm(false);
-      setMasterPasswordForm({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      });
-      setError('Master password changed successfully');
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  const handleMasterPasswordChange = (e) => {
-    const { name, value } = e.target;
-    setMasterPasswordForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
   };
 
   const fetchPasswords = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/passwords`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch passwords');
-      }
       const data = await response.json();
-      console.log('Received data:', data);
-      setPasswords(data);
-    } catch (err) {
-      console.error('Error fetching passwords:', err);
-      setError(err.message);
+      setPasswords(data || []);
+    } catch (error) {
+      setError('Failed to fetch passwords');
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleInitialize = async (e) => {
     e.preventDefault();
-    setError('');
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/initialize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: masterPassword })
+      });
+      if (response.ok) {
+        setShowInitForm(false);
+        setIsInitialized(true);
+        fetchPasswords();
+      } else {
+        setError('Failed to initialize master password');
+      }
+    } catch (error) {
+      setError('Failed to initialize master password');
+    }
+  };
 
+  const handleAddPassword = async (e) => {
+    e.preventDefault();
     try {
       const response = await fetch(`${API_BASE_URL}/api/passwords`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newPassword),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newPassword)
       });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData);
+      if (response.ok) {
+        setShowPasswordForm(false);
+        setNewPassword({ title: '', username: '', password: '', url: '', notes: '' });
+        fetchPasswords();
+      } else {
+        setError('Failed to add password');
       }
-
-      setNewPassword({
-        title: '',
-        username: '',
-        password: '',
-        notes: '',
-      });
-      fetchPasswords();
-    } catch (err) {
-      setError(err.message);
+    } catch (error) {
+      setError('Failed to add password');
     }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewPassword((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleDelete = async (id) => {
+  const handleDeletePassword = async (id) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/passwords/${id}`, {
-        method: 'DELETE',
+        method: 'DELETE'
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete password');
+      if (response.ok) {
+        fetchPasswords();
+      } else {
+        setError('Failed to delete password');
       }
+    } catch (error) {
+      setError('Failed to delete password');
+    }
+  };
 
-      fetchPasswords();
-    } catch (err) {
-      setError(err.message);
+  const handleChangeMasterPassword = async (e) => {
+    e.preventDefault();
+    if (newMasterPassword !== confirmNewMasterPassword) {
+      setError('New passwords do not match');
+      return;
+    }
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/change`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword: newMasterPassword
+        })
+      });
+      if (response.ok) {
+        setShowChangePasswordForm(false);
+        setCurrentPassword('');
+        setNewMasterPassword('');
+        setConfirmNewMasterPassword('');
+      } else {
+        setError('Failed to change master password');
+      }
+    } catch (error) {
+      setError('Failed to change master password');
     }
   };
 
   const togglePasswordVisibility = (id) => {
-    setVisiblePasswords((prev) => ({
+    setVisiblePasswords(prev => ({
       ...prev,
-      [id]: !prev[id],
+      [id]: !prev[id]
     }));
   };
 
-  if (!isInitialized) {
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+  };
+
+  const filteredPasswords = passwords
+    .filter(pwd => 
+      pwd.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      pwd.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      pwd.url.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      const aValue = a[sortBy].toLowerCase();
+      const bValue = b[sortBy].toLowerCase();
+      return sortOrder === 'asc' 
+        ? aValue.localeCompare(bValue)
+        : bValue.localeCompare(aValue);
+    });
+
+  if (showInitForm) {
     return (
-      <div className="App">
-        <h1>Vault-inator</h1>
-        {error && <p style={{ color: error.includes('successfully') ? 'green' : 'red' }}>{error}</p>}
-        
-        <form onSubmit={handleInitSubmit} style={{ marginBottom: '20px', padding: '20px', border: '1px solid #ccc', borderRadius: '4px' }}>
-          <h3>Initialize Master Password</h3>
-          <div style={{ marginBottom: '10px' }}>
-            <input
-              type="password"
-              name="password"
-              placeholder="Master Password"
-              value={initPassword.password}
-              onChange={(e) => setInitPassword(prev => ({ ...prev, password: e.target.value }))}
-              required
-              style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
-            />
-          </div>
-          <div style={{ marginBottom: '10px' }}>
-            <input
-              type="password"
-              name="confirmPassword"
-              placeholder="Confirm Master Password"
-              value={initPassword.confirmPassword}
-              onChange={(e) => setInitPassword(prev => ({ ...prev, confirmPassword: e.target.value }))}
-              required
-              style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
-            />
-          </div>
-          <button
-            type="submit"
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#4CAF50',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            Initialize Master Password
-          </button>
-        </form>
+      <div className="init-container">
+        <div className="init-card">
+          <h2>Initialize Master Password</h2>
+          <form onSubmit={handleInitialize}>
+            <div className="form-group">
+              <label>Master Password:</label>
+              <input
+                type="password"
+                value={masterPassword}
+                onChange={(e) => setMasterPassword(e.target.value)}
+                required
+              />
+            </div>
+            <button type="submit" className="btn-primary">Initialize</button>
+          </form>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="App">
-      <h1>Vault-inator</h1>
-      {error && <p style={{ color: error.includes('successfully') ? 'green' : 'red' }}>{error}</p>}
-      
-      <div style={{ marginBottom: '20px' }}>
-        <button
-          onClick={() => setShowMasterPasswordForm(!showMasterPasswordForm)}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: '#4CAF50',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer'
-          }}
-        >
-          {showMasterPasswordForm ? 'Cancel' : 'Change Master Password'}
-        </button>
+    <div className="app-container">
+      <header className="app-header">
+        <h1>Vault-inator</h1>
+        <div className="header-actions">
+          <button 
+            className="btn-secondary"
+            onClick={() => setShowChangePasswordForm(true)}
+          >
+            Change Master Password
+          </button>
+          <button 
+            className="btn-primary"
+            onClick={() => setShowPasswordForm(true)}
+          >
+            Add New Password
+          </button>
+        </div>
+      </header>
+
+      {error && <div className="error-message">{error}</div>}
+
+      <div className="search-sort-container">
+        <div className="search-box">
+          <input
+            type="text"
+            placeholder="Search passwords..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="sort-controls">
+          <select 
+            value={sortBy} 
+            onChange={(e) => setSortBy(e.target.value)}
+          >
+            <option value="title">Title</option>
+            <option value="username">Username</option>
+            <option value="url">URL</option>
+          </select>
+          <button 
+            className="btn-icon"
+            onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+          >
+            {sortOrder === 'asc' ? '↑' : '↓'}
+          </button>
+        </div>
       </div>
 
-      {showMasterPasswordForm && (
-        <form onSubmit={handleMasterPasswordSubmit} style={{ marginBottom: '20px', padding: '20px', border: '1px solid #ccc', borderRadius: '4px' }}>
-          <h3>Change Master Password</h3>
-          <div style={{ marginBottom: '10px' }}>
-            <input
-              type="password"
-              name="currentPassword"
-              placeholder="Current Master Password"
-              value={masterPasswordForm.currentPassword}
-              onChange={handleMasterPasswordChange}
-              required
-              style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
-            />
-          </div>
-          <div style={{ marginBottom: '10px' }}>
-            <input
-              type="password"
-              name="newPassword"
-              placeholder="New Master Password"
-              value={masterPasswordForm.newPassword}
-              onChange={handleMasterPasswordChange}
-              required
-              style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
-            />
-          </div>
-          <div style={{ marginBottom: '10px' }}>
-            <input
-              type="password"
-              name="confirmPassword"
-              placeholder="Confirm New Master Password"
-              value={masterPasswordForm.confirmPassword}
-              onChange={handleMasterPasswordChange}
-              required
-              style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
-            />
-          </div>
-          <button
-            type="submit"
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#4CAF50',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            Update Master Password
-          </button>
-        </form>
-      )}
-
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          name="title"
-          placeholder="Title"
-          value={newPassword.title}
-          onChange={handleInputChange}
-          required
-        />
-        <input
-          type="text"
-          name="username"
-          placeholder="Username"
-          value={newPassword.username}
-          onChange={handleInputChange}
-          required
-        />
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={newPassword.password}
-          onChange={handleInputChange}
-          required
-        />
-        <input
-          type="text"
-          name="notes"
-          placeholder="Notes"
-          value={newPassword.notes}
-          onChange={handleInputChange}
-        />
-        <button type="submit">Add Password</button>
-      </form>
-
-      <div className="password-list">
-        {passwords.map((p) => (
-          <div key={p.id} className="password-item">
-            <h3>{p.title}</h3>
-            <p>Username: {p.username}</p>
-            <p>
-              Password:{' '}
-              <span style={{ fontFamily: 'monospace' }}>
-                {visiblePasswords[p.id] ? p.password : '••••••••'}
-              </span>
-              <button
-                onClick={() => togglePasswordVisibility(p.id)}
-                style={{ marginLeft: '10px' }}
-              >
-                {visiblePasswords[p.id] ? 'Hide' : 'Show'}
-              </button>
-            </p>
-            {p.notes && <p>Notes: {p.notes}</p>}
-            <button
-              onClick={() => handleDelete(p.id)}
-              style={{ color: 'red' }}
-            >
-              Delete
-            </button>
+      <div className="passwords-grid">
+        {filteredPasswords.map((pwd) => (
+          <div key={pwd.id} className="password-card">
+            <div className="card-header">
+              <h3>{pwd.title}</h3>
+              <div className="card-actions">
+                <button 
+                  className="btn-icon"
+                  onClick={() => togglePasswordVisibility(pwd.id)}
+                >
+                  {visiblePasswords[pwd.id] ? '👁️' : '👁️‍🗨️'}
+                </button>
+                <button 
+                  className="btn-icon"
+                  onClick={() => handleDeletePassword(pwd.id)}
+                >
+                  🗑️
+                </button>
+              </div>
+            </div>
+            <div className="card-content">
+              <div className="info-row">
+                <span className="label">Username:</span>
+                <div className="value-with-copy">
+                  <span>{pwd.username}</span>
+                  <button 
+                    className="btn-icon"
+                    onClick={() => copyToClipboard(pwd.username)}
+                  >
+                    📋
+                  </button>
+                </div>
+              </div>
+              <div className="info-row">
+                <span className="label">Password:</span>
+                <div className="value-with-copy">
+                  <span>{visiblePasswords[pwd.id] ? pwd.password : '••••••••'}</span>
+                  <button 
+                    className="btn-icon"
+                    onClick={() => copyToClipboard(pwd.password)}
+                  >
+                    📋
+                  </button>
+                </div>
+              </div>
+              {pwd.url && (
+                <div className="info-row">
+                  <span className="label">URL:</span>
+                  <div className="value-with-copy">
+                    <a href={pwd.url} target="_blank" rel="noopener noreferrer">
+                      {pwd.url}
+                    </a>
+                    <button 
+                      className="btn-icon"
+                      onClick={() => copyToClipboard(pwd.url)}
+                    >
+                      📋
+                    </button>
+                  </div>
+                </div>
+              )}
+              {pwd.notes && (
+                <div className="info-row">
+                  <span className="label">Notes:</span>
+                  <span className="notes">{pwd.notes}</span>
+                </div>
+              )}
+            </div>
           </div>
         ))}
       </div>
+
+      {showPasswordForm && (
+        <div className="modal">
+          <div className="modal-content">
+            <h2>Add New Password</h2>
+            <form onSubmit={handleAddPassword}>
+              <div className="form-group">
+                <label>Title:</label>
+                <input
+                  type="text"
+                  value={newPassword.title}
+                  onChange={(e) => setNewPassword({ ...newPassword, title: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Username:</label>
+                <input
+                  type="text"
+                  value={newPassword.username}
+                  onChange={(e) => setNewPassword({ ...newPassword, username: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Password:</label>
+                <input
+                  type="password"
+                  value={newPassword.password}
+                  onChange={(e) => setNewPassword({ ...newPassword, password: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>URL:</label>
+                <input
+                  type="url"
+                  value={newPassword.url}
+                  onChange={(e) => setNewPassword({ ...newPassword, url: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>Notes:</label>
+                <textarea
+                  value={newPassword.notes}
+                  onChange={(e) => setNewPassword({ ...newPassword, notes: e.target.value })}
+                />
+              </div>
+              <div className="form-actions">
+                <button type="button" className="btn-secondary" onClick={() => setShowPasswordForm(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">Add Password</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showChangePasswordForm && (
+        <div className="modal">
+          <div className="modal-content">
+            <h2>Change Master Password</h2>
+            <form onSubmit={handleChangeMasterPassword}>
+              <div className="form-group">
+                <label>Current Password:</label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>New Password:</label>
+                <input
+                  type="password"
+                  value={newMasterPassword}
+                  onChange={(e) => setNewMasterPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Confirm New Password:</label>
+                <input
+                  type="password"
+                  value={confirmNewMasterPassword}
+                  onChange={(e) => setConfirmNewMasterPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-actions">
+                <button type="button" className="btn-secondary" onClick={() => setShowChangePasswordForm(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">Change Password</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
