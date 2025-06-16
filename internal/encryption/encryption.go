@@ -35,7 +35,7 @@ func (e *Encryptor) Encrypt(plaintext string) (string, error) {
 		return "", err
 	}
 
-	// Create a nonce
+	// Create nonce
 	nonce := make([]byte, gcm.NonceSize())
 	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
 		return "", err

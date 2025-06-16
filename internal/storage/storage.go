@@ -175,19 +175,16 @@ func (db *DB) DeletePassword(id uuid.UUID) error {
 
 // UpdateMasterPassword updates the master password and re-encrypts all stored passwords.
 func (db *DB) UpdateMasterPassword(currentPassword, newPassword string) error {
-	// Create new encryptor with the new password
 	newEncryptor, err := encryption.NewEncryptor(newPassword)
 	if err != nil {
 		return fmt.Errorf("failed to create new encryptor: %v", err)
 	}
 
-	// Get all passwords
 	entries, err := db.GetAllPasswords()
 	if err != nil {
 		return fmt.Errorf("failed to get passwords: %v", err)
 	}
 
-	// Begin transaction
 	tx, err := db.Begin()
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %v", err)

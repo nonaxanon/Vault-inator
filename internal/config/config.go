@@ -49,26 +49,6 @@ func LoadConfig() (*Config, error) {
 	dbName := os.Getenv("DB_NAME")
 	sslMode := os.Getenv("DB_SSL_MODE")
 
-	// Set default values if not provided
-	if dbUser == "" {
-		dbUser = "admin"
-	}
-	if dbPass == "" {
-		dbPass = "admin"
-	}
-	if dbHost == "" {
-		dbHost = "localhost"
-	}
-	if dbPort == "" {
-		dbPort = "5432"
-	}
-	if dbName == "" {
-		dbName = "dev"
-	}
-	if sslMode == "" {
-		sslMode = "disable"
-	}
-
 	// Construct database URL
 	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
 		dbUser, dbPass, dbHost, dbPort, dbName, sslMode)

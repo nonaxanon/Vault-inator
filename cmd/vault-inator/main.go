@@ -21,9 +21,6 @@ func main() {
 
 	// Get database connection string from environment variable
 	connStr := os.Getenv("DATABASE_URL")
-	if connStr == "" {
-		connStr = "postgres://admin:admin@192.168.1.8:5432/dev?sslmode=disable"
-	}
 
 	// Create database connection
 	db, err := storage.NewDB(connStr, cfg.MasterPassword)
@@ -41,9 +38,7 @@ func main() {
 	passwordService := services.NewPasswordService(db)
 	authService := services.NewAuthService(passwordService)
 
-	// If master password is set, derive encryption key from it
 	if cfg.MasterPassword != "" {
-		// Derive encryption key from master password using SHA-256
 		key := sha256.Sum256([]byte(cfg.MasterPassword))
 		if err := passwordService.SetEncryptionKey(key[:]); err != nil {
 			log.Fatalf("Failed to set encryption key: %v", err)
