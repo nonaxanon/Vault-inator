@@ -244,12 +244,14 @@ function App() {
                 <button 
                   className="btn-icon"
                   onClick={() => togglePasswordVisibility(pwd.id)}
+                  data-tooltip={visiblePasswords[pwd.id] ? "Hide Password" : "Show Password"}
                 >
                   {visiblePasswords[pwd.id] ? '👁️' : '👁️‍🗨️'}
                 </button>
                 <button 
                   className="btn-icon"
                   onClick={() => handleDeletePassword(pwd.id)}
+                  data-tooltip="Delete Password"
                 >
                   🗑️
                 </button>
@@ -263,6 +265,7 @@ function App() {
                   <button 
                     className="btn-icon"
                     onClick={() => copyToClipboard(pwd.username)}
+                    data-tooltip="Copy Username"
                   >
                     📋
                   </button>
@@ -275,6 +278,7 @@ function App() {
                   <button 
                     className="btn-icon"
                     onClick={() => copyToClipboard(pwd.password)}
+                    data-tooltip="Copy Password"
                   >
                     📋
                   </button>
@@ -290,6 +294,7 @@ function App() {
                     <button 
                       className="btn-icon"
                       onClick={() => copyToClipboard(pwd.url)}
+                      data-tooltip="Copy URL"
                     >
                       📋
                     </button>
