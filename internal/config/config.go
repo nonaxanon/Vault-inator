@@ -41,12 +41,37 @@ func LoadConfig() (*Config, error) {
 		fmt.Printf("Warning: .env file not found: %v\n", err)
 	}
 
-	// Get configuration from environment variables
-	dbURL := os.Getenv("DATABASE_URL")
-	if dbURL == "" {
-		fmt.Println("Warning: DATABASE_URL not set, using default")
-		dbURL = "postgres://admin:admin@192.168.1.8:5432/dev?sslmode=disable"
+	// Get database configuration from environment variables
+	dbUser := os.Getenv("DB_USER")
+	dbPass := os.Getenv("DB_PASS")
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbName := os.Getenv("DB_NAME")
+	sslMode := os.Getenv("DB_SSL_MODE")
+
+	// Set default values if not provided
+	if dbUser == "" {
+		dbUser = "admin"
 	}
+	if dbPass == "" {
+		dbPass = "admin"
+	}
+	if dbHost == "" {
+		dbHost = "localhost"
+	}
+	if dbPort == "" {
+		dbPort = "5432"
+	}
+	if dbName == "" {
+		dbName = "dev"
+	}
+	if sslMode == "" {
+		sslMode = "disable"
+	}
+
+	// Construct database URL
+	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+		dbUser, dbPass, dbHost, dbPort, dbName, sslMode)
 
 	configPath := os.Getenv("CONFIG_PATH")
 	if configPath == "" {
