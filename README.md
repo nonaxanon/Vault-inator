@@ -1,10 +1,10 @@
 # Vault-inator 🔐
 
-A secure, modern password manager built with Go and React. Vault-inator provides a user-friendly interface for managing your passwords while ensuring they remain encrypted and secure.
+A secure, local-first password manager built with Go and React. Vault-inator keeps your passwords encrypted and stored locally, giving you complete control over your data while providing a modern, user-friendly interface for password management.
 
 ## Features ✨
 
-- 🔒 Military-grade AES-256-GCM encryption
+- �� Military-grade AES-256-GCM encryption
 - 🎨 Modern, responsive dark theme UI
 - 🔍 Search and sort functionality
 - 📋 One-click copy for usernames, passwords, and URLs
@@ -25,7 +25,7 @@ Vault-inator implements several security measures to protect your passwords:
 
 ## Prerequisites 📋
 
-- Go 1.16 or higher
+- Go 1.20 or higher
 - Node.js 14 or higher
 - PostgreSQL 12 or higher
 - npm or yarn
