@@ -1,0 +1,17 @@
+# Node modules
+web/node_modules/
+
+# Build output
+web/build/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+
+# Vaultinator config
+~/.vaultinator/ 
