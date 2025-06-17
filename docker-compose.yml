@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=vaultinator
+      - DB_PASSWORD=vaultinator
+      - DB_NAME=vaultinator
+    depends_on:
+      - postgres
+    volumes:
+      - .:/app
+    networks:
+      - vaultinator-network
+
+  frontend:
+    build:
+      context: ./web
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+    environment:
+      - REACT_APP_API_URL=http://localhost:8080
+    networks:
+      - vaultinator-network
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=vaultinator
+      - POSTGRES_PASSWORD=vaultinator
+      - POSTGRES_DB=vaultinator
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - vaultinator-network
+
+networks:
+  vaultinator-network:
+    driver: bridge
+
+volumes:
+  postgres_data: 
