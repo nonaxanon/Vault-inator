@@ -4,7 +4,7 @@ A secure, local-first password manager built with Go and React. Vault-inator kee
 
 ## Features ✨
 
-- �� Military-grade AES-256-GCM encryption
+- 🔒 Military-grade AES-256-GCM encryption
 - 🎨 Modern, responsive dark theme UI
 - 🔍 Search and sort functionality
 - 📋 One-click copy for usernames, passwords, and URLs
@@ -25,10 +25,8 @@ Vault-inator implements several security measures to protect your passwords:
 
 ## Prerequisites 📋
 
-- Go 1.20 or higher
-- Node.js 14 or higher
-- PostgreSQL 12 or higher
-- npm or yarn
+- Docker and Docker Compose
+- Git
 
 ## Installation 🚀
 
@@ -38,32 +36,15 @@ Vault-inator implements several security measures to protect your passwords:
    cd vault-inator
    ```
 
-2. Set up the database:
+2. Start the application using Docker Compose:
    ```bash
-   # Create a PostgreSQL database
-   createdb vaultinator
+   docker compose up --build
    ```
 
-3. Configure environment variables:
-   ```bash
-   # Create a .env file in the root directory
-   DATABASE_URL=postgres://username:password@localhost:5432/vaultinator?sslmode=disable
-   CONFIG_PATH=/path/to/config.json
-   ```
-
-4. Build and run the backend:
-   ```bash
-   cd backend
-   go mod download
-   go run cmd/vault-inator/main.go
-   ```
-
-5. Build and run the frontend:
-   ```bash
-   cd web
-   npm install
-   npm start
-   ```
+The application will be available at:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8080
+- PostgreSQL: localhost:5432
 
 ## Usage 📖
 
@@ -80,23 +61,23 @@ Vault-inator implements several security measures to protect your passwords:
 
 ```
 vault-inator/
-├── backend/
-│   ├── cmd/
-│   │   └── vault-inator/
-│   │       └── main.go
-│   │
-│   ├── internal/
-│   │   ├── api/
-│   │   ├── config/
-│   │   ├── encryption/
-│   │   ├── services/
-│   │   └── storage/
-│   └── go.mod
+├── cmd/
+│   └── api/
+│       └── main.go
+├── internal/
+│   ├── api/
+│   ├── config/
+│   ├── encryption/
+│   ├── services/
+│   └── storage/
 ├── web/
 │   ├── src/
 │   │   ├── App.js
 │   │   └── App.css
+│   ├── nginx.conf
 │   └── package.json
+├── docker-compose.yml
+├── go.mod
 └── README.md
 ```
 
@@ -104,12 +85,32 @@ vault-inator/
 
 ```bash
 # Backend tests
-cd backend
 go test ./...
 
 # Frontend tests
 cd web
 npm test
+```
+
+### Development with Docker
+
+For development, you can use the following commands:
+
+```bash
+# Start all services
+docker compose up
+
+# Start services in detached mode
+docker compose up -d
+
+# View logs
+docker compose logs -f
+
+# Stop all services
+docker compose down
+
+# Rebuild and start services
+docker compose up --build
 ```
 
 ## Contributing 🤝
@@ -138,6 +139,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [React](https://reactjs.org/)
 - [PostgreSQL](https://www.postgresql.org/)
 - [AES-GCM](https://en.wikipedia.org/wiki/Galois/Counter_Mode)
+- [Docker](https://www.docker.com/)
 
 ## Support 💬
 
