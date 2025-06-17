@@ -1,0 +1,158 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: virtual-labs
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: virtual-labs
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: virtual-labs
+    spec:
+      containers:
+        - name: virtual-labs
+          image: jorvelazquez3/gameserver:vlabs
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8090
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: local-db
+                  key: username
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: local-db
+                  key: password
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: local-db
+                  key: dbname
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: local-db
+                  key: host
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: local-db
+                  key: port
+            - name: SEARCH_PATH
+              valueFrom:
+                secretKeyRef:
+                  name: local-db
+                  key: search_path
+            - name: GRPC_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: vlabs
+                  key: GRPC_PORT
+            - name: HTTP_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: vlabs
+                  key: HTTP_PORT
+            - name: GRPC_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: vlabs
+                  key: GRPC_HOST
+            - name: BUILD_TAGS
+              valueFrom:
+                secretKeyRef:
+                  name: vlabs
+                  key: BUILD_TAGS
+            - name: DB_SSL_MODE
+              valueFrom:
+                secretKeyRef:
+                  name: vlabs
+                  key: DB_SSL_MODE
+            - name: SERVICE_TEMPLATE
+              valueFrom:
+                secretKeyRef:
+                  name: vlabs
+                  key: SERVICE_TEMPLATE
+            - name: MIDDLEWARE_HTTP_TEMPLATE
+              valueFrom:
+                secretKeyRef:
+                  name: vlabs
+                  key: MIDDLEWARE_HTTP_TEMPLATE
+            - name: MIDDLEWARE_WS_TEMPLATE
+              valueFrom:
+                secretKeyRef:
+                  name: vlabs
+                  key: MIDDLEWARE_WS_TEMPLATE
+            - name: INGRESS_ROUTE_TEMPLATE
+              valueFrom:
+                secretKeyRef:
+                  name: vlabs
+                  key: INGRESS_ROUTE_TEMPLATE
+            - name: INGRESS_ROUTE_TCP_TEMPLATE
+              valueFrom:
+                secretKeyRef:
+                  name: vlabs
+                  key: INGRESS_ROUTE_TCP_TEMPLATE
+            - name: RBAC_TEMPLATE
+              valueFrom:
+                secretKeyRef:
+                  name: vlabs
+                  key: RBAC_TEMPLATE
+
+      imagePullSecrets:
+        - name: regcred
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: virtual-labs
+  namespace: default
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8090
+      targetPort: 8090
+      name:  grpc
+    - port: 8080
+      targetPort: 8080
+      name:  grpc-gateway
+  selector:
+    app: virtual-labs
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: virtual-labs-ingress
+  namespace: default
+  annotations:
+    traefik.ingress.kubernetes.io/protocol: h2c  # For GRPC
+spec:
+  rules:
+    #     - host: myk3s.olakeace.com
+    - http:
+        paths:
+          - path: /v1/vlabs/
+            pathType: Prefix
+            backend:
+              service:
+                name: virtual-labs
+                port:
+                  number: 8080
+#  tls:
+#    - hosts:
+#        - myk3s.olakeace.com
+#      secretName: myk3s-olakeace-com-tls
