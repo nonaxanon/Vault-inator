@@ -1,116 +1,81 @@
-#!make
-include .env
+# Vault-inator Makefile
+# Run the backend service first, then the frontend
 
-SHELL=/bin/bash
-BUILD_ID=$(shell date +%Y%m%d%H%M)
-IMAGE_NAME?=gameserver
-IMAGE_TAG?=vlabs
-REGISTRY?=jorvelazquez3
-DEPLOYMENT_FILE?=./deployment.yaml
+.PHONY: help run run-backend run-frontend build-backend build-frontend clean stop
 
-.PHONY: api
-api:
-	cd api && make build-api
+# Load environment variables from .env file
+ifneq (,$(wildcard .env))
+    include .env
+    export
+endif
 
-.PHONY: clean-api
-clean-api:
-	cd api && make clear-gen-directories
+# Default target
+help:
+	@echo "Available targets:"
+	@echo "  run          - Start backend and frontend (backend first)"
+	@echo "  run-backend  - Start only the backend service"
+	@echo "  run-frontend - Start only the frontend (requires backend running)"
+	@echo "  build-backend - Build the Go backend"
+	@echo "  build-frontend - Build the React frontend"
+	@echo "  clean        - Stop all services and clean up"
+	@echo "  stop         - Stop all running services"
 
-.PHONY: remove-validate-js-ts
-remove-validate-js-ts:
-	cd api/gen/web && find . -name "*.d.ts" | xargs sed -i 's/import \* as validate_validate_pb from '\''\.\.\/\.\.\/\.\.\/validate\/validate_pb'\''\;//g'; \
-			find . -name "*_pb.js" | xargs sed -i '/validate/d'; \
+# Main target: run backend first, then frontend
+run: run-backend
+	@echo "Backend started. Starting frontend in 3 seconds..."
+	@sleep 3
+	@$(MAKE) run-frontend
 
-.PHONY: remove-validate
-remove-validate:
-	cd api/gen/csharp && find . -name "*.cs" | xargs sed -e s/global::Validate.ValidateReflection.Descriptor,//g -i *;
+# Run backend service
+run-backend:
+	@echo "Starting backend service..."
+	@cd cmd/vault-inator && HOST=localhost go run main.go &
+	@echo "Backend service started on http://localhost:8080"
 
-.PHONY: add-serializable
-add-serializable:
-	cd api/gen/csharp && find . -name "*.cs" | xargs sed -e '/public sealed partial class PlayerCards /i [Serializable]' -i
-	cd api/gen/csharp && find . -name "*.cs" | xargs sed -e '/using pb = global::Google.Protobuf/i using System;' -i;
+# Run frontend (requires backend to be running)
+run-frontend:
+	@echo "Starting frontend..."
+	@cd web && HOST=localhost npm start
+	@echo "Frontend started on http://localhost:3000"
 
-.PHONY: sql
-sql:
-	cd tools/gorm2sql && go run main.go postgresql --f=../../internal/migrator/aggregates/aggregates.pb.gorm.go --s=ShopCardORM  --o="../../internal/db.sql"
+# Build backend
+build-backend:
+	@echo "Building backend..."
+	@cd cmd/vault-inator && go build -o main main.go
+	@echo "Backend built successfully"
 
-# delete images
-.PHONY: delete-image
-delete-image $(image):
-	docker image remove $(image)
+# Build frontend
+build-frontend:
+	@echo "Building frontend..."
+	@cd web && npm run build
+	@echo "Frontend built successfully"
 
-.PHONY: delete
-delete $(SVC):
-	kubectl delete -f internal/$(SVC)/deployment.yaml
+# Build both
+build: build-backend build-frontend
+	@echo "Both backend and frontend built successfully"
 
-.PHONY: myproxy
-myproxy:
-	docker build -f ./internal/proxy_image/Dockerfile -t jorvelazquez3/proxy:latest .
-	docker push  projectaresdemoacr.azurecr.io/proxy:0.0.1
+# Stop all services
+stop:
+	@echo "Stopping all services..."
+	@pkill -f "go run main.go" || true
+	@pkill -f "npm start" || true
+	@echo "All services stopped"
 
-.PHONY: mysaltapi
-mysaltapi:
-	docker build -f ./internal/salt_images/salt-api/Dockerfile -t jorvelazquez3/salt-api:latest .
-	docker push  projectaresdemoacr.azurecr.io/salt-api:latest
+# Clean up
+clean: stop
+	@echo "Cleaning up..."
+	@rm -f cmd/vault-inator/main
+	@rm -rf web/build
+	@echo "Cleanup completed"
 
-.PHONY: basic
-basic:
-	docker build -f ./internal/taskvalidator/templates/basic/Dockerfile -t jorvelazquez3/basic:latest .
-	docker push jorvelazquez3/basic:latest
+# Development target with hot reload
+dev: run-backend
+	@echo "Backend started. Starting frontend in development mode..."
+	@sleep 3
+	@cd web && HOST=localhost npm start
 
-# Postgres db for local dev, change the values as needed
-.PHONY: postgres postgres-clean
-postgres:
-	docker run --name dev-sql-db \
-		-e POSTGRES_PASSWORD=admin \
-		-e POSTGRES_USER=admin \
-		-e POSTGRES_DB=dev \
-		-d --rm -it -p 5432:5432 postgres
-
-postgres-clean:
-	docker kill dev-sql-db
-
-.PHONY: run-dev
-run-dev:
-	go run -tags dev ./cmd/server/...
-
-.PHONY: run-prod
-run-prod:
-	go run ./cmd/server/...
-
-.PHONY: build-dev
-build-dev:
-	go build -tags dev -o bin/server-dev ./cmd/server/...
-
-.PHONY: build-prod
-build-prod:
-	go build -o bin/server ./cmd/server/...
-
-.PHONY: build-basic
-build-basic:
-	docker build -f ./container_templates/basic/Dockerfile -t jorvelazquez3/basic:latest .
-	docker push jorvelazquez3/basic:latest
-
-.PHONY: build-vlabs
-build-vlabs:
-	docker build --build-arg PAT=$(PAT) -f ./Dockerfile -t jorvelazquez3/gameserver:vlabs .
-	docker push jorvelazquez3/gameserver:vlabs
-	kubectl delete -f ./deployment.yaml
-	kubectl apply -f ./deployment.yaml
-
-.PHONY: deploy
-deploy:
-	@echo "Building Docker image $(REGISTRY)/$(IMAGE_NAME):$(IMAGE_TAG)..."
-	docker build -t $(REGISTRY)/$(IMAGE_NAME):$(IMAGE_TAG) .
-
-	@echo "Pushing Docker image to registry..."
-	docker push $(REGISTRY)/$(IMAGE_NAME):$(IMAGE_TAG)
-
-	@echo "Deleting existing deployment..."
-	kubectl delete -f $(DEPLOYMENT_FILE)
-
-	@echo "Applying new deployment..."
-	kubectl apply -f $(DEPLOYMENT_FILE)
-
-	@echo "Deployment complete!"
-
+# Production target
+prod: build
+	@echo "Starting production services..."
+	@cd cmd/vault-inator && HOST=localhost ./main &
+	@echo "Backend started. Frontend build available in web/build/"
